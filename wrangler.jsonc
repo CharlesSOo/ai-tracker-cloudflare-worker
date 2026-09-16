@@ -1,12 +1,12 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "ai-tracker-unconfigured",
+  "name": "ai-tracker-cloudflare-worker",
   "main": "src/collector.ts",
   "compatibility_date": "2026-09-16",
   "workers_dev": false,
   "preview_urls": false,
   "vars": {
-    "AI_TRACKER_URL": "",
+    "AI_TRACKER_URL": "https://ai-tracker.smol.capital",
     "TRACKED_HOST": ""
   },
   "secrets": { "required": ["INGEST_TOKEN"] },

@@ -10,6 +10,13 @@
     "deploy": "wrangler deploy",
     "test": "node --test"
   },
+  "cloudflare": {
+    "bindings": {
+      "INGEST_TOKEN": { "description": "Paste the private site key from [AI Tracker](https://ai-tracker.smol.capital) → your site → Site key. Not a Cloudflare API key." },
+      "TRACKED_HOST": { "description": "Required: the exact lowercase hostname for that site key, e.g. example.com. No https://, path, wildcard or port. Add its route after deploying." },
+      "AI_TRACKER_URL": { "description": "Dashboard HTTPS origin. Leave https://ai-tracker.smol.capital unless you host your own AI Tracker dashboard." }
+    }
+  },
   "devDependencies": {
     "wrangler": "4.129.0"
   }

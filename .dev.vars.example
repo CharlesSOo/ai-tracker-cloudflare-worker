@@ -1,0 +1,3 @@
+# Deploy to Cloudflare prompts for this secret. Paste your domain's AI Tracker site key.
+# Never put a real key in this example file.
+INGEST_TOKEN=

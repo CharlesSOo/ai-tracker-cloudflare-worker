@@ -2,7 +2,19 @@
 
 A standalone collector for [AI Tracker](https://ai-tracker.smol.capital). Use it as a pass-through Worker route for an ordinary origin, **or** as a Tail Worker for an existing Worker. No dashboard deployment is included.
 
-## Install and deploy
+## Deploy in your browser
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/CharlesSOo/ai-tracker-cloudflare-worker)
+
+1. [Add your site in AI Tracker](https://ai-tracker.smol.capital) and copy its site key.
+2. Click **Deploy to Cloudflare**, connect your GitHub account, and choose a distinct Worker name for this site.
+3. Set **TRACKED_HOST** to that exact lowercase hostname. Keep **AI_TRACKER_URL** as your dashboard origin. Paste the site key into the **INGEST_TOKEN** secret field.
+4. Keep the detected deployment command (`npm run deploy`) and deploy. Blank or invalid host configuration is rejected rather than silently collecting nothing.
+5. Attach the exact-host route with **Fail Open**, or add a Tail consumer if the site already has a Worker (instructions below). The button does not configure site routes or overwrite existing Workers.
+
+Cloudflare clones this public repository into your own GitHub account and deploys through Workers Builds. No local Node.js or tar download is needed. If configuration fields are not exposed by the setup screen, set the two public `vars` in the cloned `wrangler.jsonc` before retrying the build; add `INGEST_TOKEN` as an encrypted Worker secret, never commit it.
+
+## Install and deploy with the CLI
 
 Requires Node.js **22.18+**, npm, a Cloudflare account, and a private **site ingest key** created for your exact hostname in the tracker dashboard. This is not your Cloudflare API key. Wrangler is pinned to `4.129.0`.
 
@@ -20,7 +32,7 @@ Replace `example.com` with your real hostname. Paste its private site key only a
 
 Setup only writes public configuration to root `wrangler.jsonc`: the exact lowercase `TRACKED_HOST`, HTTPS-origin `AI_TRACKER_URL`, and Worker name `ai-tracker-<first 16 hex characters of SHA-256(hostname)>`. For `example.com`, the name is `ai-tracker-a379a6f6eeafb9a5`, matching the main AI Tracker deploy script. The tracker and tracked host must differ. Schemes, wildcards, paths, ports and IP addresses are not accepted as a tracked domain. Use ASCII/punycode DNS hostnames.
 
-The shipped configuration has empty bindings; `npm run deploy` refuses to run until setup succeeds. Its `predeploy` check also rejects inconsistent names/bindings. `deploy` runs native `wrangler deploy`, which preserves the stored `INGEST_TOKEN`; required-secret validation prevents deployment without it. There is no custom deployment API, token file, `.env` file, route provisioning or DNS automation. Do not bypass the setup check by deploying the default configuration directly with Wrangler. Keep `wrangler.jsonc` as strict JSON (no comments/trailing commas) for the setup script.
+The shipped configuration has an empty tracked hostname; `npm run deploy` refuses to run until CLI setup or the browser deployment flow supplies valid bindings. Its `predeploy` check accepts the custom Worker name chosen in the browser, while rejecting invalid names/bindings. `deploy` runs native `wrangler deploy`, which preserves the stored `INGEST_TOKEN`; required-secret validation prevents deployment without it. There is no custom deployment API, token file, `.env` file, route provisioning or DNS automation. Do not bypass the setup check by deploying the default configuration directly with Wrangler. Keep `wrangler.jsonc` as strict JSON (no comments/trailing commas) for the setup script.
 
 The name is deterministic: if that Worker already exists in your account, inspect it before proceeding. Native Wrangler can update it; this package does not perform an ownership check. Setup does not upload code or migrate stored secrets.
 

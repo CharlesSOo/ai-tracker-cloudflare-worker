@@ -46,8 +46,13 @@ test("setup writes deterministic per-domain config and check refuses unconfigure
   assert.equal(config.vars.INGEST_TOKEN, undefined);
   assert.notEqual(siteConfig("www.example.com", "https://tracker.example").name, config.name);
   assert.doesNotThrow(() => main(["--check"], path));
+  writeFileSync(path, JSON.stringify({ ...config, name: 'my-cloudflare-button-worker' }));
+  assert.doesNotThrow(() => main(['--check'], path));
+  const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+  assert.ok(pkg.cloudflare.bindings.TRACKED_HOST.description);
+  assert.match(readFileSync(join(root, '.dev.vars.example'), 'utf8'), /^INGEST_TOKEN=$/m);
   for (const changed of [
-    { ...config, name: "wrong" },
+    { ...config, name: "invalid name" },
     { ...config, vars: { ...config.vars, TRACKED_HOST: "EXAMPLE.COM" } },
     { ...config, vars: { ...config.vars, AI_TRACKER_URL: "https://ai-tracker.smol.capital/" } },
   ]) {
