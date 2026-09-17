@@ -4,37 +4,62 @@ A standalone collector for [AI Tracker](https://ai-tracker.smol.capital). Use it
 
 The easiest install is **Connect Cloudflare** in your AI Tracker dashboard (Site settings → Installation), when your dashboard offers it. Otherwise use the CLI below.
 
-## Install and deploy with the CLI
+## Prerequisites
 
-Requires Node.js **22.18+**, npm, a Cloudflare account, and a private **site ingest key** created for your exact hostname in the tracker dashboard. This is not your Cloudflare API key. Wrangler is pinned to `4.129.0`.
+- Your AI Tracker site key (created for your exact hostname in the dashboard; not a Cloudflare API key)
+- A Cloudflare account with your domain configured and proxied
+- Node.js 22+ installed locally
 
-```sh
-git clone https://github.com/CharlesSOo/ai-tracker-cloudflare-worker.git
-cd ai-tracker-cloudflare-worker
-npm install
-npx wrangler login
-npx wrangler secret put INGEST_TOKEN
-npm run deploy
-```
+## Installation
 
-Paste your site's private key only at Wrangler's secret prompt. On a new installation, accept Wrangler's prompt to create the missing Worker; this creates a placeholder Worker before storing the secret. Run `npm run deploy` next to replace the placeholder with this collector. **Do not attach a route or Tail consumer until deployment succeeds.** For multiple Cloudflare accounts, select the intended account with Wrangler (or set `CLOUDFLARE_ACCOUNT_ID`) consistently for secret and deploy commands.
+1. **Clone and install**
+   ```sh
+   git clone https://github.com/CharlesSOo/ai-tracker-cloudflare-worker.git
+   cd ai-tracker-cloudflare-worker
+   npm install
+   ```
 
-**Optional setup.** The site key already binds visits to one hostname, so the clone deploys as is. Run `npm run setup -- --tracker-url https://your-dashboard.example [--domain example.com]` before deploying if you host your own AI Tracker dashboard, run more than one site in the same Cloudflare account (each needs its own Worker name), or use a route that also covers other hostnames.
+2. **Authenticate with Cloudflare**
+   ```sh
+   npx wrangler login
+   ```
 
-Setup only writes public configuration to root `wrangler.jsonc`: the exact lowercase `TRACKED_HOST`, HTTPS-origin `AI_TRACKER_URL`, and Worker name `ai-tracker-<first 16 hex characters of SHA-256(hostname)>`. For `example.com`, the name is `ai-tracker-a379a6f6eeafb9a5`, matching the main AI Tracker deploy script. The tracker and tracked host must differ. Schemes, wildcards, paths, ports and IP addresses are not accepted as a tracked domain. Use ASCII/punycode DNS hostnames.
+3. **Store your site key** (encrypted, never committed)
+   ```sh
+   npx wrangler secret put INGEST_TOKEN
+   ```
+   Paste your key when prompted and press Enter. Confirm creating the Worker named `ai-tracker-cloudflare-worker` with `Y`.
 
-The shipped configuration has an empty tracked hostname; `npm run deploy` refuses to run until CLI setup or the browser deployment flow supplies valid bindings. Its `predeploy` check accepts the custom Worker name chosen in the browser, while rejecting invalid names/bindings. `deploy` runs native `wrangler deploy`, which preserves the stored `INGEST_TOKEN`; required-secret validation prevents deployment without it. There is no custom deployment API, token file, `.env` file, route provisioning or DNS automation. Do not bypass the setup check by deploying the default configuration directly with Wrangler. Keep `wrangler.jsonc` as strict JSON (no comments/trailing commas) for the setup script.
+4. **Deploy**
+   ```sh
+   npm run deploy
+   ```
 
-The name is deterministic: if that Worker already exists in your account, inspect it before proceeding. Native Wrangler can update it; this package does not perform an ownership check. Setup does not upload code or migrate stored secrets.
+5. **Configure routes** in the Cloudflare dashboard
+   - Go to **Compute & AI** > **Workers & Pages**
+   - Select **ai-tracker-cloudflare-worker** > **Settings** > **Domains & Routes** > **Add** > **Route**
+   - Select your zone and enter `example.com/*`
+   - Set **Failure mode** to **Fail Open**
+   - Save
+
+Use a Worker Route, not a Worker Custom Domain. Details and safety notes for this step are in the next section.
+
+### Optional configuration
+
+The site key already binds visits to one hostname, so the clone deploys as is. Run `npm run setup -- --tracker-url https://your-dashboard.example [--domain example.com]` after `npm install` if you host your own AI Tracker dashboard, run more than one site in the same Cloudflare account (each needs its own Worker name), or use a route that also covers other hostnames.
+
+Setup only writes public configuration to root `wrangler.jsonc`: HTTPS-origin `AI_TRACKER_URL` and, with `--domain`, the exact lowercase `TRACKED_HOST` and Worker name `ai-tracker-<first 16 hex characters of SHA-256(hostname)>`. No secret is written. `npm run deploy` first runs a `predeploy` check that rejects invalid names or bindings, then native `wrangler deploy`.
+
+With `--domain` the name is deterministic: if that Worker already exists in your account, inspect it before proceeding. Native Wrangler can update it; this package does not perform an ownership check.
 
 ## Attach to an ordinary origin: exact-host route, Fail Open
 
 1. Ensure the hostname already has the correct **proxied** DNS record in your Cloudflare zone. This package does not change DNS.
 2. Check all existing Worker routes for that host, including wildcard and path routes. **Do not replace another Worker's route.** Use the Tail option below if a Worker already serves the site.
-3. After deploying the collector, add a Worker **route** in Cloudflare for exactly `example.com/*`, selecting the generated Worker name. Do not use `*.example.com/*`, `*example.com/*`, or a Worker Custom Domain. The route without a scheme covers HTTP and HTTPS for this one host.
+3. After deploying the collector, add a Worker **route** in Cloudflare for exactly `example.com/*`, selecting this Worker. Do not use `*.example.com/*`, `*example.com/*`, or a Worker Custom Domain. The route without a scheme covers HTTP and HTTPS for this one host.
 4. Set the route's request-limit failure mode to **Fail Open (proceed)** and verify it is saved. This lets requests reach the origin when the applicable Worker request limit is exceeded; it is not a guarantee against every runtime/origin failure.
 
-`example.com` and `www.example.com` are separate hosts. The exact-host guard deliberately ignores other hosts. Both `workers.dev` and preview URLs are disabled. No `routes` field is declared: attaching and maintaining routes is a separate, manual operation. When redeploying, review any Wrangler route/configuration prompts and do not approve removal or replacement of existing routes.
+`example.com` and `www.example.com` are separate hosts. The tracker rejects hosts that do not belong to the site key; with `--domain` configured the collector also skips them. Both `workers.dev` and preview URLs are disabled. No `routes` field is declared: attaching and maintaining routes is a separate, manual operation. When redeploying, review any Wrangler route/configuration prompts and do not approve removal or replacement of existing routes.
 
 Rollback: remove only this collector's route to restore direct origin handling. Do not delete unrelated routes or DNS records.
 
