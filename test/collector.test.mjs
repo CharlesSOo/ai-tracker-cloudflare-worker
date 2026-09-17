@@ -72,11 +72,39 @@ test("native fetch ingestion uses secret binding and tracking errors cannot alte
   assert.ok(!logs.mock.calls[0].arguments[0].includes(env.INGEST_TOKEN));
 });
 
-test("origin errors are not retried or replaced", async (t) => {
-  const error = new Error("origin down");
-  const origin = t.mock.method(globalThis, "fetch", async () => { throw error; });
-  await assert.rejects(collector.fetch(request(), env, { waitUntil() { assert.fail("no response to track"); }, passThroughOnException() {} }), (caught) => caught === error);
+test("origin errors return 502 without replaying a consumed POST", async (t) => {
+  let body;
+  const origin = t.mock.method(globalThis, "fetch", async (req) => { body = await req.text(); throw new Error("origin disconnected"); });
+  t.mock.method(console, "error", () => {});
+  const response = await collector.fetch(new Request("https://example.com/checkout", { method: "POST", body: "payment=1" }), env,
+    { waitUntil() { assert.fail("no response to track"); }, passThroughOnException() {} });
+  assert.equal(body, "payment=1");
+  assert.equal(response.status, 502);
+  assert.equal(await response.text(), "Bad Gateway");
   assert.equal(origin.mock.callCount(), 1);
+});
+
+test("uses preserved IPv6 only for Cloudflare Pseudo IPv4 overwrite addresses", async (t) => {
+  t.mock.method(globalThis, "fetch", async () => new Response());
+  const events = [];
+  const binding = { ...env, TRACKER: { fetch: async (req) => { events.push(await req.json()); return new Response(); } } };
+  for (const [ip, ipv6, expected] of [
+    ["240.1.2.3", "2001:4860::1", "2001:4860::1"],
+    ["255.1.2.3", "2001:4860::1", "2001:4860::1"],
+    ["240.1.2.3", "", "240.1.2.3"],
+    ["192.0.2.1", "2001:4860::1", "192.0.2.1"],
+    ["2001:4860::2", "2001:4860::1", "2001:4860::2"],
+    ["", "2001:4860::1", undefined],
+  ]) {
+    const req = request();
+    req.headers.set("cf-connecting-ip", ip); req.headers.set("cf-connecting-ipv6", ipv6);
+    const pending = [];
+    await collector.fetch(req, binding, { waitUntil: (p) => pending.push(p), passThroughOnException() {} });
+    await Promise.all(pending);
+    assert.equal(events.at(-1).ai.ip, expected);
+    await collector.tail([{ event: { request: { url: req.url, method: req.method, headers: Object.fromEntries(req.headers) }, response: { status: 200 } } }], binding);
+    assert.equal(events.at(-1).ai.ip, expected);
+  }
 });
 
 test("tail filters exact host, uses redacted request fields, ignores non-request events and isolates errors", async (t) => {

@@ -26,7 +26,9 @@ async function track(request: Pick<Request, "url" | "method" | "headers">, statu
 
   const tracker = new URL(env.AI_TRACKER_URL);
   if (tracker.protocol !== "https:" || tracker.hostname === url.hostname || tracker.username || tracker.password) return;
-  const ip = request.headers.get("cf-connecting-ip");
+  let ip = request.headers.get("cf-connecting-ip");
+  // Pseudo IPv4 overwrite mode uses Class E addresses. Ignore visitor-supplied IPv6 headers otherwise.
+  if (ip && /^(?:24\d|25[0-5])\./.test(ip)) ip = request.headers.get("cf-connecting-ipv6") || ip;
   const event = new Request(new URL("/api/ingest", tracker), {
     method: "POST",
     headers: { Authorization: `Bearer ${env.INGEST_TOKEN}`, "Content-Type": "application/json" },
@@ -45,11 +47,18 @@ async function track(request: Pick<Request, "url" | "method" | "headers">, statu
 
 export default {
   async fetch(request: Request, env: Bindings, ctx: ExecutionContext) {
-    // If anything in this Worker throws, Cloudflare serves the request as if the Worker were not on the route.
+    // Fail open on unexpected code errors, but never replay a failed origin fetch.
     ctx.passThroughOnException();
     // Pass the original request and streaming response through, including redirects,
-    // cookies, non-GET bodies and errors. Never retry an origin request.
-    const response = await fetch(request);
+    // cookies, non-GET bodies and HTTP errors.
+    let response: Response;
+    try {
+      response = await fetch(request);
+    } catch {
+      // The origin may have consumed the body already; runtime fallback cannot safely resend it.
+      console.error(JSON.stringify({ message: "origin_fetch_failed" }));
+      return new Response("Bad Gateway", { status: 502 });
+    }
     ctx.waitUntil(track(request, response.status, env).catch((error) => trackingFailure(error, env)));
     return response;
   },

@@ -65,7 +65,7 @@ Only crawler requests for pages, `robots.txt`, sitemaps and `llms.txt` are repor
 
 Static files are skipped for tracking, but the Worker still forwards them when your route matches them. To run the Worker on less of your traffic, scope the route to the paths you want measured, for example `example.com/blog/*`, and add more routes as needed.
 
-**Safety.** Reporting can never delay or change a response, and it times out after 1.5 seconds. If this Worker ever fails, Cloudflare serves your site as if the Worker were not there. If its request limit is reached, **Fail Open** does the same. The Worker has no runtime dependencies.
+**Safety.** Reporting runs in the background and times out after 1.5 seconds. Origin HTTP responses pass through unchanged; origin connection failures return 502 rather than replaying a potentially consumed request. Unexpected code exceptions can fall through to the origin, and **Fail Open** bypasses the Worker when its request limit is reached. This does not protect against every runtime/platform failure. The Worker has no runtime dependencies.
 
 ## Uninstall
 
