@@ -6,8 +6,7 @@
   "workers_dev": false,
   "preview_urls": false,
   "vars": {
-    "AI_TRACKER_URL": "https://ai-tracker.smol.capital",
-    "TRACKED_HOST": ""
+    "AI_TRACKER_URL": "https://ai-tracker.smol.capital"
   },
   "secrets": {
     "required": [
