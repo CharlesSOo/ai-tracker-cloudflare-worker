@@ -2,17 +2,7 @@
 
 A standalone collector for [AI Tracker](https://ai-tracker.smol.capital). Use it as a pass-through Worker route for an ordinary origin, **or** as a Tail Worker for an existing Worker. No dashboard deployment is included.
 
-## Deploy in your browser
-
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/CharlesSOo/ai-tracker-cloudflare-worker)
-
-1. [Add your site in AI Tracker](https://ai-tracker.smol.capital) and copy its site key.
-2. Click **Deploy to Cloudflare**, connect your GitHub account, and choose a distinct Worker name for this site.
-3. Set **TRACKED_HOST** to that exact lowercase hostname. Keep **AI_TRACKER_URL** as your dashboard origin. Paste the site key into the **INGEST_TOKEN** secret field.
-4. Keep the detected deployment command (`npm run deploy`) and deploy. Blank or invalid host configuration is rejected rather than silently collecting nothing.
-5. Attach the exact-host route with **Fail Open**, or add a Tail consumer if the site already has a Worker (instructions below). The button does not configure site routes or overwrite existing Workers.
-
-Cloudflare clones this public repository into your own GitHub account and deploys through Workers Builds. No local Node.js or tar download is needed. If configuration fields are not exposed by the setup screen, set the two public `vars` in the cloned `wrangler.jsonc` before retrying the build; add `INGEST_TOKEN` as an encrypted Worker secret, never commit it.
+The easiest install is **Connect Cloudflare** in your AI Tracker dashboard (Site settings → Installation), when your dashboard offers it. Otherwise use the CLI below.
 
 ## Install and deploy with the CLI
 

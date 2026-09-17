@@ -9,6 +9,11 @@
     "AI_TRACKER_URL": "https://ai-tracker.smol.capital",
     "TRACKED_HOST": "your-site.example"
   },
+  "secrets": {
+    "required": [
+      "INGEST_TOKEN"
+    ]
+  },
   "observability": {
     "enabled": true,
     "logs": {

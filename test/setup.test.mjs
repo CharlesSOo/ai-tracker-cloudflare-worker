@@ -41,6 +41,7 @@ test("setup writes deterministic per-domain config and check refuses unconfigure
   assert.equal(config.name, `ai-tracker-${createHash("sha256").update("example.com").digest("hex").slice(0, 16)}`);
   assert.equal(config.name, "ai-tracker-a379a6f6eeafb9a5");
   assert.deepEqual(config.vars, { TRACKED_HOST: "example.com", AI_TRACKER_URL: "https://ai-tracker.smol.capital" });
+  assert.deepEqual(config.secrets, { required: ["INGEST_TOKEN"] });
   // The shipped placeholder host must never pass the predeploy check.
   writeFileSync(path, JSON.stringify({ ...config, vars: { ...config.vars, TRACKED_HOST: "your-site.example" } }));
   assert.throws(() => main(["--check"], path), /npm run setup/);
