@@ -7,7 +7,7 @@
   "preview_urls": false,
   "vars": {
     "AI_TRACKER_URL": "https://ai-tracker.smol.capital",
-    "TRACKED_HOST": "your-site.example"
+    "TRACKED_HOST": ""
   },
   "secrets": {
     "required": [

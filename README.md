@@ -12,13 +12,14 @@ Requires Node.js **22.18+**, npm, a Cloudflare account, and a private **site ing
 git clone https://github.com/CharlesSOo/ai-tracker-cloudflare-worker.git
 cd ai-tracker-cloudflare-worker
 npm install
-npm run setup -- --domain example.com --tracker-url https://ai-tracker.smol.capital
 npx wrangler login
 npx wrangler secret put INGEST_TOKEN
 npm run deploy
 ```
 
-Replace `example.com` with your real hostname. Paste its private site key only at Wrangler's secret prompt. On a new installation, accept Wrangler's prompt to create the missing Worker; this creates a placeholder Worker before storing the secret. Run `npm run deploy` next to replace the placeholder with this collector. **Do not attach a route or Tail consumer until deployment succeeds.** For multiple Cloudflare accounts, select the intended account with Wrangler (or set `CLOUDFLARE_ACCOUNT_ID`) consistently for secret and deploy commands.
+Paste your site's private key only at Wrangler's secret prompt. On a new installation, accept Wrangler's prompt to create the missing Worker; this creates a placeholder Worker before storing the secret. Run `npm run deploy` next to replace the placeholder with this collector. **Do not attach a route or Tail consumer until deployment succeeds.** For multiple Cloudflare accounts, select the intended account with Wrangler (or set `CLOUDFLARE_ACCOUNT_ID`) consistently for secret and deploy commands.
+
+**Optional setup.** The site key already binds visits to one hostname, so the clone deploys as is. Run `npm run setup -- --tracker-url https://your-dashboard.example [--domain example.com]` before deploying if you host your own AI Tracker dashboard, run more than one site in the same Cloudflare account (each needs its own Worker name), or use a route that also covers other hostnames.
 
 Setup only writes public configuration to root `wrangler.jsonc`: the exact lowercase `TRACKED_HOST`, HTTPS-origin `AI_TRACKER_URL`, and Worker name `ai-tracker-<first 16 hex characters of SHA-256(hostname)>`. For `example.com`, the name is `ai-tracker-a379a6f6eeafb9a5`, matching the main AI Tracker deploy script. The tracker and tracked host must differ. Schemes, wildcards, paths, ports and IP addresses are not accepted as a tracked domain. Use ASCII/punycode DNS hostnames.
 

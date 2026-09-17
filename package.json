@@ -18,7 +18,7 @@
         "description": "Paste the private site key from [AI Tracker](https://ai-tracker.smol.capital) \u2192 your site \u2192 Site key. Not a Cloudflare API key."
       },
       "TRACKED_HOST": {
-        "description": "Required: replace your-site.example with the exact lowercase hostname for that site key, e.g. example.com. No https://, path, wildcard or port. Add its route after deploying."
+        "description": "Optional: the exact lowercase hostname for that site key, e.g. example.com, to skip other hostnames on a shared route. The tracker rejects any hostname that does not belong to the key either way."
       },
       "AI_TRACKER_URL": {
         "description": "Dashboard HTTPS origin. Leave https://ai-tracker.smol.capital unless you host your own AI Tracker dashboard."

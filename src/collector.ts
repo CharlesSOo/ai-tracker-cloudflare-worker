@@ -17,9 +17,10 @@ function trackingFailure(error: unknown, env: Bindings) {
 async function track(request: Pick<Request, "url" | "method" | "headers">, status: number | undefined, env: Bindings, source = "cloudflare-worker"): Promise<void> {
   const url = new URL(request.url);
   const userAgent = request.headers.get("user-agent") ?? "";
-  // Pages and discovery files count; static subresources do not.
+  // Pages and discovery files count; static subresources do not. TRACKED_HOST is an optional
+  // pre-filter: the tracker itself rejects any host that does not belong to the site key.
   if (
-    url.hostname !== env.TRACKED_HOST || ASSET_PATH.test(url.pathname) || !env.INGEST_TOKEN || !env.AI_TRACKER_URL ||
+    (env.TRACKED_HOST && url.hostname !== env.TRACKED_HOST) || ASSET_PATH.test(url.pathname) || !env.INGEST_TOKEN || !env.AI_TRACKER_URL ||
     (request.method !== "GET" && request.method !== "HEAD") || !BOT_HINTS.test(userAgent)
   ) return;
 
