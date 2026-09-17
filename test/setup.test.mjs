@@ -53,7 +53,7 @@ test("setup writes deterministic per-domain config and check refuses unconfigure
   assert.doesNotThrow(() => main(['--check'], path));
   const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
   assert.ok(pkg.cloudflare.bindings.TRACKED_HOST.description);
-  assert.match(readFileSync(join(root, '.dev.vars.example'), 'utf8'), /^INGEST_TOKEN=$/m);
+  assert.match(readFileSync(join(root, '.dev.vars.example'), 'utf8'), /^INGEST_TOKEN=paste-your-site-key$/m);
   for (const changed of [
     { ...config, name: "invalid name" },
     { ...config, vars: { ...config.vars, TRACKED_HOST: "EXAMPLE.COM" } },
