@@ -12,6 +12,8 @@ This Worker runs on a Cloudflare **Worker Route** in front of your existing site
 
 ## Installation
 
+Your AI Tracker dashboard shows these steps with your own hostname filled in (**Site settings → Installation**). Each site gets its own Worker, named after it; below, `example.com` becomes `ai-tracker-example-com`.
+
 1. **Clone and install**
    ```bash
    git clone https://github.com/CharlesSOo/ai-tracker-cloudflare-worker.git
@@ -26,17 +28,17 @@ This Worker runs on a Cloudflare **Worker Route** in front of your existing site
 
 3. **Set your site key** (encrypted, never committed)
    ```bash
-   npx wrangler secret put INGEST_TOKEN
+   npx wrangler secret put INGEST_TOKEN --name ai-tracker-example-com
    ```
-   Paste your key when prompted and press Enter. Enter `Y` to create the Worker `ai-tracker-cloudflare-worker`.
+   Paste your key when prompted and press Enter. Enter `Y` to create the Worker.
 
 4. **Deploy**
    ```bash
-   npm run deploy
+   npm run deploy -- --name ai-tracker-example-com
    ```
 
 5. **Configure the route** in the Cloudflare dashboard
-   - Go to **Compute & AI** > **Workers & Pages** > **ai-tracker-cloudflare-worker** > **Settings** > **Domains & Routes**
+   - Go to **Compute & AI** > **Workers & Pages** > **ai-tracker-example-com** > **Settings** > **Domains & Routes**
    - Select **Add** > **Route**. Never choose **Custom domain**: a form that asks for a subdomain is the wrong one, and would replace your site with this Worker.
    - Select your zone and enter `example.com/*`
    - Set **Failure mode** to **Fail Open**, then save
@@ -47,7 +49,7 @@ Your site key is for one exact hostname. `www.example.com` is a separate site wi
 
 ## What this creates in Cloudflare
 
-- One Worker: `ai-tracker-cloudflare-worker`
+- One Worker per site: `ai-tracker-example-com`
 - One encrypted secret: `INGEST_TOKEN`
 - One Worker Route, added by you in step 5
 
@@ -67,35 +69,30 @@ Static files are skipped for tracking, but the Worker still forwards them when y
 
 ## Uninstall
 
-1. Delete the route: **Workers & Pages** > **ai-tracker-cloudflare-worker** > **Settings** > **Domains & Routes**. Traffic goes straight to your site again.
+1. Delete the route: **Workers & Pages** > **ai-tracker-example-com** > **Settings** > **Domains & Routes**. Traffic goes straight to your site again.
 2. Check that your site loads.
-3. Optionally delete the Worker: `npx wrangler delete ai-tracker-cloudflare-worker`
+3. Optionally delete the Worker: `npx wrangler delete --name ai-tracker-example-com`
 
 ## Rollback
 
 ```bash
-npx wrangler deployments list
-npx wrangler rollback <version-id> --name ai-tracker-cloudflare-worker
+npx wrangler deployments list --name ai-tracker-example-com
+npx wrangler rollback <version-id> --name ai-tracker-example-com
 ```
 
 ## Troubleshooting
 
 - **No visits showing?** Check the route exists and matches your hostname exactly, then run **Verify installation** in AI Tracker.
-- **Check the key is set:** `npx wrangler secret list`
-- **Changed or rotated your key?** `npx wrangler secret put INGEST_TOKEN`
-- **View logs:** `npx wrangler tail`
+- **Check the key is set:** `npx wrangler secret list --name ai-tracker-example-com`
+- **Changed or rotated your key?** `npx wrangler secret put INGEST_TOKEN --name ai-tracker-example-com`
+- **View logs:** `npx wrangler tail ai-tracker-example-com`
 
 ## Sites that already run a Worker
 
 A route pattern can only point at one Worker, so never replace an existing route. Follow steps 1-4, skip step 5, and add this Worker as a Tail consumer of the Worker that serves your site (Workers Paid plan):
 
 ```json
-{ "tail_consumers": [{ "service": "ai-tracker-cloudflare-worker" }] }
+{ "tail_consumers": [{ "service": "ai-tracker-example-com" }] }
 ```
 
 Keep any consumers already listed, and add it to every Worker that serves pages on that hostname. A Tail consumer only receives logs after each request and cannot affect your site.
-
-## Other setups
-
-- **More than one site in the same Cloudflare account:** give each its own Worker name and key: `npx wrangler secret put INGEST_TOKEN --name ai-tracker-example-com`, then `npx wrangler deploy --name ai-tracker-example-com`.
-- **Self-hosted AI Tracker dashboard:** set `AI_TRACKER_URL` in `wrangler.jsonc` to your dashboard's HTTPS origin before deploying.
