@@ -1,6 +1,9 @@
 // A pass-through route for ordinary origins, or a Tail Worker for existing Workers.
 const BOT_HINTS = /bot|crawler|spider|crawl|gpt|claude|perplexity|bing|applebot|bytespider|ccbot|amazon|amzn|meta-|duckassist|mistral|google|copilot|grok|kimi|qwen|cohere|msnbot/i;
 
+// Standalone copy of the tracker's src/asset-paths.ts; the tracker's ingest filter is authoritative.
+const ASSET_PATH = /\.(?:js|mjs|cjs|css|map|png|jpe?g|gif|webp|avif|svg|ico|bmp|tiff?|woff2?|ttf|otf|eot|mp[34]|webm|ogg|wav|m4[av]|mov|wasm)$|^\/(?:_next\/(?:static|image)|cdn-cgi)(?:\/|$)/i;
+
 type Bindings = CollectorEnv & { TRACKER?: Fetcher };
 
 function trackingFailure(error: unknown, env: Bindings) {
@@ -14,9 +17,9 @@ function trackingFailure(error: unknown, env: Bindings) {
 async function track(request: Pick<Request, "url" | "method" | "headers">, status: number | undefined, env: Bindings, source = "cloudflare-worker"): Promise<void> {
   const url = new URL(request.url);
   const userAgent = request.headers.get("user-agent") ?? "";
-  // No path/extension exclusions: discovery files and every page count too.
+  // Pages and discovery files count; static subresources do not.
   if (
-    url.hostname !== env.TRACKED_HOST || !env.INGEST_TOKEN || !env.AI_TRACKER_URL ||
+    url.hostname !== env.TRACKED_HOST || ASSET_PATH.test(url.pathname) || !env.INGEST_TOKEN || !env.AI_TRACKER_URL ||
     (request.method !== "GET" && request.method !== "HEAD") || !BOT_HINTS.test(userAgent)
   ) return;
 

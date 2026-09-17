@@ -8,7 +8,7 @@ const request = (url = "https://example.com/", method = "GET", userAgent = "GPTB
 });
 
 test("fetch preserves request and streaming response while ingestion stays in waitUntil", async (t) => {
-  const original = request("https://example.com/image.png?private=yes");
+  const original = request("https://example.com/pricing?private=yes");
   const response = new Response("original bytes", { status: 302, headers: { location: "/next", "set-cookie": "a=b" } });
   const origin = t.mock.method(globalThis, "fetch", async (req) => { assert.equal(req, original); return response; });
   let event;
@@ -25,20 +25,20 @@ test("fetch preserves request and streaming response while ingestion stays in wa
   assert.equal(event.headers.get("cookie"), null);
   assert.equal(event.redirect, "manual");
   assert.deepEqual(await event.json(), {
-    href: "https://example.com/image.png",
+    href: "https://example.com/pricing",
     ai: { userAgent: "GPTBot", ip: "192.0.2.1", statusCode: 302, source: "cloudflare-worker" },
   });
   finish(new Response(null, { status: 204 }));
   await Promise.all(pending);
 });
 
-test("exact-host and method guards apply to every path, including discovery and static files", async (t) => {
+test("exact-host and method guards apply to pages and discovery files; static subresources are skipped", async (t) => {
   t.mock.method(globalThis, "fetch", async () => new Response(null, { status: 200 }));
   const events = [];
   const binding = { ...env, TRACKER: { fetch: async (req) => { events.push(await req.json()); return new Response(null, { status: 204 }); } } };
   const pending = [];
   const ctx = { waitUntil: (promise) => pending.push(promise) };
-  for (const path of ["/robots.txt", "/sitemap.xml", "/llms.txt", "/article", "/style.css", "/asset.js", "/image.webp"]) {
+  for (const path of ["/robots.txt", "/sitemap.xml", "/llms.txt", "/article", "/pricing", "/blog/v1.2", "/style.css", "/asset.js", "/image.webp", "/_next/image", "/favicon.ico"]) {
     await collector.fetch(request(`https://example.com${path}`, "HEAD"), binding, ctx);
   }
   for (const req of [request("https://www.example.com/"), request("https://example.com.evil.test/"), request("https://other.example/"), request(undefined, "POST"), request(undefined, "GET", "Mozilla/5.0")]) {
@@ -48,7 +48,9 @@ test("exact-host and method guards apply to every path, including discovery and 
     await collector.fetch(request(), { ...binding, ...vars }, ctx);
   }
   await Promise.all(pending);
-  assert.equal(events.length, 7);
+  // Pages and discovery files only; the five static subresources are skipped.
+  assert.equal(events.length, 6);
+  assert.deepEqual(events.map((e) => new URL(e.href).pathname), ["/robots.txt", "/sitemap.xml", "/llms.txt", "/article", "/pricing", "/blog/v1.2"]);
 });
 
 test("native fetch ingestion uses secret binding and tracking errors cannot alter origin response", async (t) => {
