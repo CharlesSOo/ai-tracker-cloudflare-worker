@@ -45,6 +45,8 @@ async function track(request: Pick<Request, "url" | "method" | "headers">, statu
 
 export default {
   async fetch(request: Request, env: Bindings, ctx: ExecutionContext) {
+    // If anything in this Worker throws, Cloudflare serves the request as if the Worker were not on the route.
+    ctx.passThroughOnException();
     // Pass the original request and streaming response through, including redirects,
     // cookies, non-GET bodies and errors. Never retry an origin request.
     const response = await fetch(request);

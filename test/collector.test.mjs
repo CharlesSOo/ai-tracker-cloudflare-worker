@@ -15,7 +15,7 @@ test("fetch preserves request and streaming response while ingestion stays in wa
   let finish;
   const binding = { ...env, TRACKER: { fetch: (req) => { event = req; return new Promise((resolve) => { finish = resolve; }); } } };
   const pending = [];
-  const result = await collector.fetch(original, binding, { waitUntil: (promise) => pending.push(promise) });
+  const result = await collector.fetch(original, binding, { waitUntil: (promise) => pending.push(promise), passThroughOnException() {} });
   assert.equal(result, response);
   assert.equal(result.bodyUsed, false);
   assert.equal(origin.mock.callCount(), 1);
@@ -37,7 +37,7 @@ test("exact-host and method guards apply to pages and discovery files; static su
   const events = [];
   const binding = { ...env, TRACKER: { fetch: async (req) => { events.push(await req.json()); return new Response(null, { status: 204 }); } } };
   const pending = [];
-  const ctx = { waitUntil: (promise) => pending.push(promise) };
+  const ctx = { waitUntil: (promise) => pending.push(promise), passThroughOnException() {} };
   for (const path of ["/robots.txt", "/sitemap.xml", "/llms.txt", "/article", "/pricing", "/blog/v1.2", "/style.css", "/asset.js", "/image.webp", "/_next/image", "/favicon.ico"]) {
     await collector.fetch(request(`https://example.com${path}`, "HEAD"), binding, ctx);
   }
@@ -64,7 +64,7 @@ test("native fetch ingestion uses secret binding and tracking errors cannot alte
   });
   const logs = t.mock.method(console, "error", () => {});
   const pending = [];
-  assert.equal(await collector.fetch(request(), env, { waitUntil: (p) => pending.push(p) }), response);
+  assert.equal(await collector.fetch(request(), env, { waitUntil: (p) => pending.push(p), passThroughOnException() {} }), response);
   await Promise.all(pending);
   assert.equal(calls, 2);
   assert.match(logs.mock.calls[0].arguments[0], /tracking_failed/);
@@ -75,7 +75,7 @@ test("native fetch ingestion uses secret binding and tracking errors cannot alte
 test("origin errors are not retried or replaced", async (t) => {
   const error = new Error("origin down");
   const origin = t.mock.method(globalThis, "fetch", async () => { throw error; });
-  await assert.rejects(collector.fetch(request(), env, { waitUntil() { assert.fail("no response to track"); } }), (caught) => caught === error);
+  await assert.rejects(collector.fetch(request(), env, { waitUntil() { assert.fail("no response to track"); }, passThroughOnException() {} }), (caught) => caught === error);
   assert.equal(origin.mock.callCount(), 1);
 });
 
