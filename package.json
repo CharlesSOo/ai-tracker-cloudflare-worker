@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22.18.0" },
+  "engines": {
+    "node": ">=22.18.0"
+  },
   "scripts": {
     "setup": "node scripts/setup.mjs",
     "predeploy": "node scripts/setup.mjs --check",
@@ -12,9 +14,15 @@
   },
   "cloudflare": {
     "bindings": {
-      "INGEST_TOKEN": { "description": "Paste the private site key from [AI Tracker](https://ai-tracker.smol.capital) → your site → Site key. Not a Cloudflare API key." },
-      "TRACKED_HOST": { "description": "Required: the exact lowercase hostname for that site key, e.g. example.com. No https://, path, wildcard or port. Add its route after deploying." },
-      "AI_TRACKER_URL": { "description": "Dashboard HTTPS origin. Leave https://ai-tracker.smol.capital unless you host your own AI Tracker dashboard." }
+      "INGEST_TOKEN": {
+        "description": "Paste the private site key from [AI Tracker](https://ai-tracker.smol.capital) \u2192 your site \u2192 Site key. Not a Cloudflare API key."
+      },
+      "TRACKED_HOST": {
+        "description": "Required: replace your-site.example with the exact lowercase hostname for that site key, e.g. example.com. No https://, path, wildcard or port. Add its route after deploying."
+      },
+      "AI_TRACKER_URL": {
+        "description": "Dashboard HTTPS origin. Leave https://ai-tracker.smol.capital unless you host your own AI Tracker dashboard."
+      }
     }
   },
   "devDependencies": {

@@ -7,12 +7,16 @@
   "preview_urls": false,
   "vars": {
     "AI_TRACKER_URL": "https://ai-tracker.smol.capital",
-    "TRACKED_HOST": ""
+    "TRACKED_HOST": "your-site.example"
   },
-  "secrets": { "required": ["INGEST_TOKEN"] },
   "observability": {
     "enabled": true,
-    "logs": { "invocation_logs": false },
-    "traces": { "enabled": true, "head_sampling_rate": 0.01 }
+    "logs": {
+      "invocation_logs": false
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.01
+    }
   }
 }

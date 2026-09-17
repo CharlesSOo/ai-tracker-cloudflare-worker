@@ -47,7 +47,7 @@ export function main(argv = process.argv.slice(2), path = configPath) {
       if (values.domain || values["tracker-url"]) throw new Error("Check does not accept setup options.");
       const expected = siteConfig(config.vars?.TRACKED_HOST, config.vars?.AI_TRACKER_URL);
       // Deploy to Cloudflare lets the user choose a Worker name independently of CLI setup.
-      if (typeof config.name !== 'string' || !/^[a-z0-9][a-z0-9_-]{0,62}$/.test(config.name) || config.name === 'ai-tracker-unconfigured' || config.vars.TRACKED_HOST !== expected.vars.TRACKED_HOST || config.vars.AI_TRACKER_URL !== expected.vars.AI_TRACKER_URL) {
+      if (typeof config.name !== 'string' || !/^[a-z0-9][a-z0-9_-]{0,62}$/.test(config.name) || config.name === 'ai-tracker-unconfigured' || config.vars.TRACKED_HOST === 'your-site.example' || config.vars.TRACKED_HOST !== expected.vars.TRACKED_HOST || config.vars.AI_TRACKER_URL !== expected.vars.AI_TRACKER_URL) {
         throw new Error("Worker name or bindings are invalid.");
       }
     } catch {
